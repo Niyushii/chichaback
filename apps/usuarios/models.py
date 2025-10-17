@@ -29,11 +29,9 @@ class Usuario(models.Model):
         return f"{self.nombre} {self.apellidos} (@{self.username})"
     
     def set_password(self, raw_password):
-        """Encripta y guarda la contraseña."""
         self.password = make_password(raw_password)
     
     def check_password(self, raw_password):
-        """Verifica si la contraseña es correcta."""
         return check_password(raw_password, self.password)
 
 
@@ -58,11 +56,9 @@ class Moderador(models.Model):
         return f"{self.nombre} {self.apellidos} - Admin"
     
     def set_password(self, raw_password):
-        """Encripta y guarda la contraseña."""
         self.password = make_password(raw_password)
     
     def check_password(self, raw_password):
-        """Verifica si la contraseña es correcta."""
         return check_password(raw_password, self.password)
 
 
@@ -84,9 +80,7 @@ class SuperAdministrador(models.Model):
         return f"SuperAdmin - {self.username}"
     
     def set_password(self, raw_password):
-        """Encripta y guarda la contraseña."""
         self.password = make_password(raw_password)
     
     def check_password(self, raw_password):
-        """Verifica si la contraseña es correcta."""
         return check_password(raw_password, self.password)
