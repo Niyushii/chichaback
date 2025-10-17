@@ -1,29 +1,30 @@
 from django.db import models
+from core.models import Estado
 
 class Categoria(models.Model):
-    categoriaID = models.AutoField(primary_key=True)
     nombre = models.CharField(max_length=100)
-    icono = models.CharField(max_length=255, blank=True, null=True)
-    categoriaPadre = models.ForeignKey(
+    icono = models.URLField(max_length=500, blank=True, null=True)
+    categoria_padre = models.ForeignKey(
         'self',
-        on_delete=models.SET_NULL,
-        null=True,
+        on_delete=models.CASCADE,
         blank=True,
+        null=True,
         related_name='subcategorias'
     )
-    estado = models.CharField(
-        max_length=20,
-        default='activo',
-    )
-    fechaCreacion = models.DateTimeField(auto_now_add=True)
-    fechaEliminacion = models.DateTimeField(null=True, blank=True)
-    fechaModificacion = models.DateTimeField(auto_now=True)
-
+    estado = models.ForeignKey(Estado, on_delete=models.PROTECT, related_name='categorias')
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    fecha_eliminacion = models.DateTimeField(blank=True, null=True)
+    fecha_modificacion = models.DateTimeField(auto_now=True)
+    
     class Meta:
         db_table = 'categoria'
         verbose_name = 'Categoría'
         verbose_name_plural = 'Categorías'
-        ordering = ['nombre']
-
+        indexes = [
+            models.Index(fields=['categoria_padre']),
+        ]
+    
     def __str__(self):
+        if self.categoria_padre:
+            return f"{self.categoria_padre.nombre} > {self.nombre}"
         return self.nombre
