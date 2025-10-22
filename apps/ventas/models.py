@@ -1,12 +1,12 @@
 from django.db import models
 from core.models import Estado
-from apps.usuarios.models import User
+from apps.usuarios.models import Usuario
 from apps.tiendas.models import Tienda
 from apps.productos.models import TiendaProducto
 
 
 class Venta(models.Model):
-    usuario = models.ForeignKey(User, on_delete=models.PROTECT, related_name='ventas')
+    usuario = models.ForeignKey(Usuario, on_delete=models.PROTECT, related_name='ventas')
     tienda = models.ForeignKey(Tienda, on_delete=models.PROTECT, related_name='ventas')
     total = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     estado = models.ForeignKey(Estado, on_delete=models.PROTECT, related_name='ventas')
@@ -26,14 +26,6 @@ class Venta(models.Model):
     
     def __str__(self):
         return f"Venta #{self.id} - {self.usuario.username} en {self.tienda.nombre}"
-    
-    def calcular_total(self):
-        total = sum(
-            detalle.cantidad * detalle.precio_unitario 
-            for detalle in self.detalles.all()
-        )
-        self.total = total
-        return total
 
 class VentaProducto(models.Model):
     venta = models.ForeignKey(Venta, on_delete=models.CASCADE, related_name='detalles')
@@ -62,12 +54,3 @@ class VentaProducto(models.Model):
     def __str__(self):
         return f"{self.cantidad}x {self.tienda_producto.producto.nombre} (Venta #{self.venta.id})"
     
-    def save(self, *args, **kwargs):
-        """
-        Calcula el subtotal automáticamente al guardar.
-        """
-        self.subtotal = self.cantidad * self.precio_unitario
-        super().save(*args, **kwargs)
-        # Actualizar el total de la venta
-        self.venta.calcular_total()
-        self.venta.save()
