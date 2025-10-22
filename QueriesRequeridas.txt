@@ -1,0 +1,17 @@
+// SuperAdmin
+1. Listar Moderadores
+2. Ver moderador en especifico
+3. Ver actividad de moderador (que tipo de usuario sea moderador para que funcione y registre por el momento la actividadde log)
+4. Ver perfil
+
+// Usuario
+1. Perfil de usuario
+
+
+// Categorias
+1. Todas las Categorias
+2. Categorias unicamente Padre
+3. Categorias hijas de un padre
+
+// Favortios
+1. Mis favoritos
