@@ -1,0 +1,20 @@
+from graphene_django import DjangoObjectType
+from .models import Usuario, Moderador, SuperAdministrador
+
+class UsuarioType(DjangoObjectType):
+    class Meta:
+        model = Usuario
+        fields = "__all__"
+        description = "Representa un usuario registrado en el sistema."
+
+class ModeradorType(DjangoObjectType):
+    class Meta:
+        model = Moderador
+        fields = "__all__"
+        description = "Representa un moderador con privilegios especiales."
+
+class SuperAdministradorType(DjangoObjectType):
+    class Meta:
+        model = SuperAdministrador
+        fields = "__all__"
+        description = "Representa un superadministrador con control total sobre el sistema."
