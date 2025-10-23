@@ -1,0 +1,27 @@
+//SuperAdmin
+1.Regsitro -> Verificar que no exista otro SuperAdmin registrado para funcionar
+
+2. Crear Moderadores: Crea un moderador
+
+3. Editar y eliminar Moderadores
+
+
+// Usuario
+1. Registro de Usuario -> datos:(email, username, password, nombre, apellido, celular)
+
+2. Login -> datos: (email, password), devolver un jwt o bearer para un mayor control e identificar el tipo de usuario
+
+3. Editar -> Todos los datos + subida de imagen
+
+4. Eliminar perfil -> Cambiar el estado del usuario a inactivo
+
+// Tienda
+
+1. Activar Vendedor -> Al momento de crear tienda el usuario cambia el estado is_seller a True
+
+2. Crear tienda -> datos:(nombre, descripcion, telefono, direccion, foto_perfil, codigo_qr(el usuario sube la imagen))
+
+3. Editar Tienda -> cambia los datos que se usan en la mutacion crear tienda
+
+4. Eliminar Tienda -> cambiar estado a inactivo
+
