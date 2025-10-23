@@ -1,3 +1,4 @@
+import graphene
 from graphene_django import DjangoObjectType
 from .models import Usuario, Moderador, SuperAdministrador
 
@@ -18,3 +19,11 @@ class SuperAdministradorType(DjangoObjectType):
         model = SuperAdministrador
         fields = "__all__"
         description = "Representa un superadministrador con control total sobre el sistema."
+        
+class EstadisticasUsuariosType(graphene.ObjectType):
+    """Tipo para estadísticas de usuarios"""
+    total = graphene.Int(description="Total de usuarios registrados")
+    activos = graphene.Int(description="Usuarios activos")
+    inactivos = graphene.Int(description="Usuarios inactivos")
+    vendedores = graphene.Int(description="Usuarios que son vendedores")
+    nuevos_ultimos_30_dias = graphene.Int(description="Usuarios registrados en los últimos 30 días")
