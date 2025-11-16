@@ -1,15 +1,18 @@
 import graphene
 from apps.usuarios.schemaUsuarios import Query as UsuariosQuery, Mutation as UsuariosMutation
+from apps.categorias.schemaCategorias import Query as CategoriasQuery, Mutation as CategoriasMutation
 
 # Clases que unifican los esquemas de las distintas aplicaciones
 class Query(
     UsuariosQuery,
+    CategoriasQuery,
     graphene.ObjectType
 ):
     pass
 
 class Mutation(
     UsuariosMutation,
+    CategoriasMutation,
     graphene.ObjectType
 ):
     pass
