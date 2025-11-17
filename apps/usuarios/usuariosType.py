@@ -1,6 +1,6 @@
 import graphene
 from graphene_django import DjangoObjectType
-from .models import Usuario, Moderador, SuperAdministrador
+from .models import Usuario, Moderador, SuperAdministrador, Auditoria
 
 class UsuarioType(DjangoObjectType):
     class Meta:
@@ -33,3 +33,9 @@ class EstadisticasModeradoresType(graphene.ObjectType):
     activos = graphene.Int(description="Moderadores activos")
     inactivos = graphene.Int(description="Moderadores inactivos")
     nuevos_ultimos_30_dias = graphene.Int(description="Moderadores registrados en los últimos 30 días")
+    
+class AuditoriaType(DjangoObjectType):
+    class Meta:
+        model = Auditoria
+        fields = "__all__"
+        description = "Representa un registro de auditoría de acciones realizadas por usuarios."

@@ -107,7 +107,7 @@ class EditarProducto(graphene.Mutation):
             raise GraphQLError("Producto no encontrado")
 
         # Validar propiedad
-        if tp.tienda.propietario != usuario and not usuario.es_admin:
+        if tp.tienda.propietario != usuario and not (usuario.es_admin or usuario.es_moderador):
             raise GraphQLError("No tienes permisos para editar este producto")
 
         # Editar producto base
@@ -153,7 +153,7 @@ class EliminarProducto(graphene.Mutation):
         except TiendaProducto.DoesNotExist:
             raise GraphQLError("Producto no encontrado")
 
-        if tp.tienda.propietario != usuario and not usuario.es_admin:
+        if tp.tienda.propietario != usuario and not (usuario.es_admin or usuario.es_moderador):
             raise GraphQLError("No tienes permisos para eliminar este producto")
 
         # Soft delete
@@ -186,7 +186,7 @@ class SubirImagenProducto(graphene.Mutation):
         except TiendaProducto.DoesNotExist:
             raise GraphQLError("Producto no encontrado")
 
-        if tp.tienda.propietario != usuario and not usuario.es_admin:
+        if tp.tienda.propietario != usuario and not (usuario.es_admin or usuario.es_moderador):
             raise GraphQLError("No autorizado")
 
         img = ImagenProducto.objects.create(
@@ -220,7 +220,7 @@ class EliminarImagenProducto(graphene.Mutation):
         except ImagenProducto.DoesNotExist:
             raise GraphQLError("Imagen no encontrada")
 
-        if img.producto.tienda.propietario != usuario and not usuario.es_admin:
+        if img.producto.tienda.propietario != usuario and not (usuario.es_admin or usuario.es_moderador):
             raise GraphQLError("No autorizado")
 
         img.fecha_eliminacion = timezone.now()
@@ -255,7 +255,7 @@ class EditarImagenProducto(graphene.Mutation):
         except ImagenProducto.DoesNotExist:
             raise GraphQLError("Imagen no encontrada")
 
-        if img.producto.tienda.propietario != usuario and not usuario.es_admin:
+        if img.producto.tienda.propietario != usuario and not (usuario.es_admin or usuario.es_moderador):
             raise GraphQLError("No autorizado")
 
         if input.nombre:
@@ -290,7 +290,7 @@ class ActualizarEstadoProducto(graphene.Mutation):
         except TiendaProducto.DoesNotExist:
             raise GraphQLError("Producto no encontrado")
 
-        if tp.tienda.propietario != usuario and not usuario.es_admin:
+        if tp.tienda.propietario != usuario and not (usuario.es_admin or usuario.es_moderador):
             raise GraphQLError("No autorizado")
 
         tp.estado_id = estado_id
@@ -317,7 +317,7 @@ class ActualizarStockPrecio(graphene.Mutation):
         except TiendaProducto.DoesNotExist:
             raise GraphQLError("Producto no encontrado")
 
-        if tp.tienda.propietario != usuario and not usuario.es_admin:
+        if tp.tienda.propietario != usuario and not (usuario.es_admin or usuario.es_moderador):
             raise GraphQLError("No autorizado")
 
         if precio is not None:

@@ -84,3 +84,21 @@ class SuperAdministrador(models.Model):
     
     def check_password(self, raw_password):
         return check_password(raw_password, self.password)
+    
+# Nuevo modelo para auditoría de moderadores
+class Auditoria(models.Model):
+    usuario = models.ForeignKey(Usuario, on_delete=models.CASCADE)
+    accion = models.CharField(max_length=200)
+    descripcion = models.TextField()
+    fecha = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-fecha']
+
+    @staticmethod
+    def registrar(usuario, accion, descripcion):
+        Auditoria.objects.create(
+            usuario=usuario,
+            accion=accion,
+            descripcion=descripcion
+        )
