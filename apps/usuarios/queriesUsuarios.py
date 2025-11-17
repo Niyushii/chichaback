@@ -1,8 +1,8 @@
 # apps/usuarios/queries.py
 import graphene
 from graphql import GraphQLError
-from .usuariosType import UsuarioType, ModeradorType, SuperAdministradorType
-from .models import Usuario, Moderador, SuperAdministrador
+from .usuariosType import UsuarioType, ModeradorType, SuperAdministradorType, AuditoriaType
+from .models import Usuario, Moderador, SuperAdministrador, Auditoria
 from .utils import requiere_autenticacion
 from core.models import Estado
 
@@ -57,6 +57,9 @@ class UsuariosQueries(graphene.ObjectType):
         'apps.usuarios.usuariosType.EstadisticasUsuariosType',
         description="Obtiene estadísticas generales de usuarios"
     )
+    
+    # ============ AUDITORÍA (SUPERADMIN) =============
+    auditoria = graphene.List(AuditoriaType)
     
     # ============================================================
     # RESOLVERS - QUERIES PÚBLICAS
@@ -154,6 +157,11 @@ class UsuariosQueries(graphene.ObjectType):
             return Moderador.objects.select_related('estado').get(pk=id)
         except Moderador.DoesNotExist:
             raise GraphQLError("Moderador no encontrado")
+    
+    # Registro de auditoría
+    @requiere_autenticacion(user_types=['superadmin'])
+    def resolve_auditoria(self, info, **kwargs):
+        return Auditoria.objects.all()
     
     # ============================================================
     # RESOLVERS - ESTADÍSTICAS

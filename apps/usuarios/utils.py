@@ -31,22 +31,23 @@ def decodificar_token(token):
         return None  # Si el token es inválido
 
 def obtener_usuario_desde_contexto(info):
-    # Funcion para extraer contexto(info) del usuario para las peticiones hacia GraphQL
     request = info.context
     auth_header = request.headers.get('Authorization', '')
-    
-    if not auth_header.startswith('Bearer '):
+
+    if auth_header.startswith('Bearer '):
+        token = auth_header.replace('Bearer ', '')
+    elif auth_header.startswith('JWT '):
+        token = auth_header.replace('JWT ', '')
+    else:
         return None, None
-    
-    token = auth_header.replace('Bearer ', '')
+
     payload = decodificar_token(token)
-    
     if not payload:
         return None, None
-    
+
     user_id = payload.get('user_id')
     user_type = payload.get('user_type')
-    
+
     try:
         if user_type == 'usuario':
             usuario = Usuario.objects.get(id=user_id)
@@ -56,10 +57,12 @@ def obtener_usuario_desde_contexto(info):
             usuario = SuperAdministrador.objects.get(id=user_id)
         else:
             return None, None
-        
+
         return usuario, user_type
+
     except (Usuario.DoesNotExist, Moderador.DoesNotExist, SuperAdministrador.DoesNotExist):
         return None, None
+
 
 def requiere_autenticacion(user_types=None):
     # Funcion decoradora para proteger resolvers en GraphQL
