@@ -85,7 +85,6 @@ class RegistrarSuperAdmin(graphene.Mutation):
             mensaje="Super Administrador registrado exitosamente"
         )
 
-
 class CrearModerador(graphene.Mutation):
     class Arguments:
         input = CrearModeradorInput(required=True)
@@ -350,30 +349,6 @@ class EliminarUsuario(graphene.Mutation):
         return EliminarUsuario(
             ok=True,
             mensaje="Cuenta eliminada exitosamente"
-        )
-        
-        
-# ============= MUTACIONES CATEGORIAS =============
-class CrearCategoria(graphene.Mutation):
-    class Arguments:
-        nombre = graphene.String(required=True)
-        descripcion = graphene.String()
-    
-    categoria = graphene.Field(lambda: CategoriaType)
-    mensaje = graphene.String()
-    
-    @requiere_autenticacion(user_types=['moderador', 'superadmin'])
-    def mutate(self, info, nombre, descripcion=None, **kwargs):
-        # Lógica para crear una categoría
-        categoria = Categoria(
-            nombre=nombre,
-            descripcion=descripcion
-        )
-        categoria.save()
-        
-        return CrearCategoria(
-            categoria=categoria,
-            mensaje="Categoría creada exitosamente"
         )
 
 # ============= MUTATION CLASS =============
