@@ -13,10 +13,28 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 from pathlib import Path 
 from decouple import config 
 import os
+import cloudinary
+import cloudinary_storage
+import cloudinary.api
+from cloudinary.utils import cloudinary_url
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': 'dz9nqunfq',
+    'API_KEY': '457856666173356',
+    'API_SECRET': '77m5-3sVyaLzB1pPvW0bTzZA0vU',
+    'secure': True,
+}
+cloudinary.config(
+    cloud_name='dz9nqunfq',
+    api_key='457856666173356',
+    api_secret='77m5-3sVyaLzB1pPvW0bTzZA0vU',
+    secure=True
+)
+
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
@@ -41,6 +59,8 @@ ALLOWED_HOSTS = []
 
 INSTALLED_APPS = [
     'apps.categorias',
+    'cloudinary',
+    'cloudinary_storage',
     'apps.favoritos',
     'apps.productos',
     'apps.tiendas',

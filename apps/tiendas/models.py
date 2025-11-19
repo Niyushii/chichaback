@@ -9,13 +9,13 @@ class Tienda(models.Model):
     descripcion = models.TextField(blank=True, null=True)
     telefono = models.CharField(max_length=20, blank=True, null=True)
     direccion = models.TextField(blank=True, null=True)
-    foto_perfil = models.ImageField(upload_to='tiendas/fotos/', blank=True, null=True)
-    codigo_qr = models.ImageField(upload_to='tiendas/qr/', blank=True, null=True)
+    foto_perfil = models.URLField(max_length=500, blank=True, null=True)
+    codigo_qr = models.URLField(max_length=500, blank=True, null=True)
     estado = models.ForeignKey(Estado, on_delete=models.PROTECT, related_name='tiendas')
     fecha_creacion = models.DateTimeField(auto_now_add=True)
     fecha_eliminacion = models.DateTimeField(blank=True, null=True)
     fecha_modificacion = models.DateTimeField(auto_now=True)
-    
+
     class Meta:
         db_table = 'tienda'
         verbose_name = 'Tienda'
@@ -24,6 +24,6 @@ class Tienda(models.Model):
             models.Index(fields=['propietario']),
             models.Index(fields=['nombre']),
         ]
-    
+
     def __str__(self):
         return f"{self.nombre} (Propietario: {self.propietario.username})"

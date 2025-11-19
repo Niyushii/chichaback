@@ -1,16 +1,17 @@
 import graphene
+import cloudinary.uploader
 from graphql import GraphQLError
 from django.utils import timezone
 from .models import Tienda
 from .tiendasType import TiendaType
 from apps.usuarios.utils import requiere_autenticacion
-from apps.usuarios.models import Usuario
+from apps.usuarios.models import Usuario, Auditoria
 from core.models import Estado
 from core.graphql_scalars import Upload
-from apps.usuarios.models import Auditoria
+
 
 # ============================================
-# INPUT TYPES
+# INPUT TYPES (SIN ARCHIVOS)
 # ============================================
 
 class CrearTiendaInput(graphene.InputObjectType):
@@ -18,8 +19,6 @@ class CrearTiendaInput(graphene.InputObjectType):
     descripcion = graphene.String()
     telefono = graphene.String()
     direccion = graphene.String()
-    foto_perfil = Upload()
-    codigo_qr = Upload()
 
 
 class EditarTiendaInput(graphene.InputObjectType):
@@ -27,8 +26,6 @@ class EditarTiendaInput(graphene.InputObjectType):
     descripcion = graphene.String()
     telefono = graphene.String()
     direccion = graphene.String()
-    foto_perfil = Upload()
-    codigo_qr = Upload()
 
 
 # ============================================
@@ -38,15 +35,17 @@ class EditarTiendaInput(graphene.InputObjectType):
 class CrearTienda(graphene.Mutation):
     class Arguments:
         input = CrearTiendaInput(required=True)
+        foto_perfil = Upload()
+        codigo_qr = Upload()
 
     tienda = graphene.Field(TiendaType)
     mensaje = graphene.String()
 
     @requiere_autenticacion(user_types=['usuario'])
-    def mutate(self, info, input, **kwargs):
+    def mutate(self, info, input, foto_perfil=None, codigo_qr=None, **kwargs):
         usuario = kwargs['current_user']
 
-        # Nombre único por usuario
+        # Verificación de nombre único
         if Tienda.objects.filter(
             propietario=usuario,
             nombre__iexact=input.nombre,
@@ -62,18 +61,25 @@ class CrearTienda(graphene.Mutation):
             direccion=input.direccion,
             estado=Estado.get_activo()
         )
+
+        # --- SUBIR A CLOUDINARY SI HAY ARCHIVOS ---
+        if foto_perfil:
+            res = cloudinary.uploader.upload(
+                foto_perfil,
+                folder="tiendas/foto_perfil/"
+            )
+            tienda.foto_perfil = res["secure_url"]
+
+        if codigo_qr:
+            res = cloudinary.uploader.upload(
+                codigo_qr,
+                folder="tiendas/codigo_qr/"
+            )
+            tienda.codigo_qr = res["secure_url"]
+
         tienda.save()
 
-        # IMÁGENES OPCIONALES
-        if input.foto_perfil:
-            tienda.foto_perfil = input.foto_perfil
-
-        if input.codigo_qr:
-            tienda.codigo_qr = input.codigo_qr
-
-        tienda.save()
-
-        # Convertir a vendedor
+        # Convertir en vendedor
         if not usuario.is_seller:
             usuario.is_seller = True
             usuario.save()
@@ -85,19 +91,21 @@ class CrearTienda(graphene.Mutation):
 
 
 # ============================================
-# MUTACIÓN: EDITAR TIENDA (PERMISOS CORREGIDOS)
+# MUTACIÓN: EDITAR TIENDA
 # ============================================
 
 class EditarTienda(graphene.Mutation):
     class Arguments:
         id = graphene.ID(required=True)
         input = EditarTiendaInput(required=True)
+        foto_perfil = Upload()
+        codigo_qr = Upload()
 
     tienda = graphene.Field(TiendaType)
     mensaje = graphene.String()
 
-    @requiere_autenticacion(user_types=['usuario', 'moderador', 'superadmin'])
-    def mutate(self, info, id, input, **kwargs):
+    @requiere_autenticacion(user_types=['usuario','moderador','superadmin'])
+    def mutate(self, info, id, input, foto_perfil=None, codigo_qr=None, **kwargs):
         usuario = kwargs["current_user"]
         rol = kwargs["user_type"]
 
@@ -106,60 +114,38 @@ class EditarTienda(graphene.Mutation):
         except Tienda.DoesNotExist:
             raise GraphQLError("Tienda no encontrada")
 
-        # PERMISOS:
-        # usuario → solo su tienda
-        # moderador y superadmin → pueden editar TODO
         if rol == "usuario" and tienda.propietario.id != usuario.id:
             raise GraphQLError("No tienes permiso para editar esta tienda")
 
-        # Auditoría: registrar si un moderador/admin modifica
-        if rol in ["moderador", "superadmin"]:
-            Auditoria.registrar(
-                usuario=usuario,
-                accion="editar_tienda",
-                descripcion=f"{usuario.email} editó la tienda {tienda.nombre}"
+        # actualizar campos simples
+        for field in ["nombre", "descripcion", "telefono", "direccion"]:
+            value = getattr(input, field)
+            if value is not None:
+                setattr(tienda, field, value)
+
+        # SUBIR NUEVAS IMÁGENES
+        if foto_perfil:
+            res = cloudinary.uploader.upload(
+                foto_perfil,
+                folder="tiendas/foto_perfil/"
             )
+            tienda.foto_perfil = res["secure_url"]
 
-        # Actualización de campos
-        if input.nombre:
-            if Tienda.objects.filter(
-                propietario=tienda.propietario,
-                nombre__iexact=input.nombre,
-                fecha_eliminacion__isnull=True
-            ).exclude(pk=id).exists():
-                raise GraphQLError("Ya existe otra tienda con ese nombre")
-            tienda.nombre = input.nombre
-
-        if input.descripcion is not None:
-            tienda.descripcion = input.descripcion
-
-        if input.telefono is not None:
-            tienda.telefono = input.telefono
-
-        if input.direccion is not None:
-            tienda.direccion = input.direccion
-
-        # IMÁGENES
-        if input.foto_perfil:
-            if tienda.foto_perfil:
-                tienda.foto_perfil.delete(save=False)
-            tienda.foto_perfil = input.foto_perfil
-
-        if input.codigo_qr:
-            if tienda.codigo_qr:
-                tienda.codigo_qr.delete(save=False)
-            tienda.codigo_qr = input.codigo_qr
+        if codigo_qr:
+            res = cloudinary.uploader.upload(
+                codigo_qr,
+                folder="tiendas/codigo_qr/"
+            )
+            tienda.codigo_qr = res["secure_url"]
 
         tienda.save()
 
-        return EditarTienda(
-            tienda=tienda,
-            mensaje="Tienda actualizada exitosamente"
-        )
+        return EditarTienda(tienda=tienda, mensaje="Tienda actualizada exitosamente")
+
 
 
 # ============================================
-# MUTACIÓN: ELIMINAR TIENDA (PERMISOS CORREGIDOS)
+# MUTACIÓN: ELIMINAR TIENDA
 # ============================================
 
 class EliminarTienda(graphene.Mutation):
@@ -183,13 +169,17 @@ class EliminarTienda(graphene.Mutation):
         if rol == "usuario" and tienda.propietario.id != usuario.id:
             raise GraphQLError("No tienes permiso para eliminar esta tienda")
 
-        # Registrar auditoría (moderador/admin)
+        # ✅ Auditoría
         if rol in ["moderador", "superadmin"]:
             Auditoria.registrar(
                 usuario=usuario,
                 accion="eliminar_tienda",
-                descripcion=f"{usuario.email} eliminó la tienda {tienda.nombre}"
+                descripcion=f"{rol.capitalize()} {usuario.email} eliminó la tienda '{tienda.nombre}'"
             )
+
+        # Verificar productos activos
+        if tienda.productos.filter(fecha_eliminacion__isnull=True).exists():
+            raise GraphQLError("No se puede eliminar una tienda con productos activos")
 
         # Soft delete
         tienda.fecha_eliminacion = timezone.now()
@@ -236,11 +226,12 @@ class EliminarFotoPerfil(graphene.Mutation):
         if rol == "usuario" and tienda.propietario.id != usuario.id:
             raise GraphQLError("No tienes permiso")
 
+        # ✅ Auditoría
         if rol in ["moderador", "superadmin"]:
             Auditoria.registrar(
                 usuario=usuario,
-                accion="eliminar_foto_perfil",
-                descripcion=f"{usuario.email} eliminó la foto de perfil de {tienda.nombre}"
+                accion="eliminar_foto_perfil_tienda",
+                descripcion=f"{rol.capitalize()} {usuario.email} eliminó foto de perfil de '{tienda.nombre}'"
             )
 
         if tienda.foto_perfil:
@@ -271,11 +262,12 @@ class EliminarCodigoQR(graphene.Mutation):
         if rol == "usuario" and tienda.propietario.id != usuario.id:
             raise GraphQLError("No tienes permiso")
 
+        # ✅ Auditoría
         if rol in ["moderador", "superadmin"]:
             Auditoria.registrar(
                 usuario=usuario,
-                accion="eliminar_codigo_qr",
-                descripcion=f"{usuario.email} eliminó el código QR de {tienda.nombre}"
+                accion="eliminar_codigo_qr_tienda",
+                descripcion=f"{rol.capitalize()} {usuario.email} eliminó código QR de '{tienda.nombre}'"
             )
 
         if tienda.codigo_qr:

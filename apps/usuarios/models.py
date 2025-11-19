@@ -87,18 +87,33 @@ class SuperAdministrador(models.Model):
     
 # Nuevo modelo para auditoría de moderadores
 class Auditoria(models.Model):
-    usuario = models.ForeignKey(Usuario, on_delete=models.CASCADE)
+    usuario_tipo = models.CharField(max_length=20, blank=True, null=True)
+    usuario_id = models.IntegerField(blank=True, null=True)
+    usuario_email = models.EmailField(max_length=255, blank=True, null=True)
+
     accion = models.CharField(max_length=200)
     descripcion = models.TextField()
     fecha = models.DateTimeField(auto_now_add=True)
 
     class Meta:
+        db_table = 'auditoria'
         ordering = ['-fecha']
+        verbose_name = 'Auditoría'
+        verbose_name_plural = 'Auditorías'
+        indexes = [
+            models.Index(fields=['usuario_tipo', 'usuario_id']),
+            models.Index(fields=['fecha']),
+        ]
 
     @staticmethod
     def registrar(usuario, accion, descripcion):
         Auditoria.objects.create(
-            usuario=usuario,
+            usuario_tipo=usuario.__class__.__name__.lower() if usuario else None,
+            usuario_id=usuario.id if usuario else None,
+            usuario_email=usuario.email if usuario and hasattr(usuario, "email") else None,
             accion=accion,
             descripcion=descripcion
         )
+
+    def __str__(self):
+        return f"[{self.usuario_tipo}] {self.accion} - {self.fecha}"

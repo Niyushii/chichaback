@@ -3,6 +3,7 @@ from apps.usuarios.schemaUsuarios import Query as UsuariosQuery, Mutation as Usu
 from apps.categorias.schemaCategorias import Query as CategoriasQuery, Mutation as CategoriasMutation
 from apps.tiendas.schemaTiendas import Query as TiendasQuery, Mutation as TiendasMutation
 from apps.productos.schemaProductos import Query as ProductosQuery, Mutation as ProductosMutation
+from apps.favoritos.schemaFavoritos import Query as FavoritosQuery, Mutation as FavoritosMutation
 from core.coreType import EstadoType
 
 
@@ -12,6 +13,7 @@ class Query(
     CategoriasQuery,
     TiendasQuery,
     ProductosQuery,
+    FavoritosQuery,
     graphene.ObjectType
 ):
     pass
@@ -21,6 +23,7 @@ class Mutation(
     CategoriasMutation,
     TiendasMutation,
     ProductosMutation,
+    FavoritosMutation,
     graphene.ObjectType
 ):
     pass
