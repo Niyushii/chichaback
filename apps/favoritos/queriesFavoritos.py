@@ -9,6 +9,11 @@ class FavoritosQueries(graphene.ObjectType):
     
     mis_favoritos = graphene.List(
         FavoritoType,
+        ordenar_por=graphene.String(default_value="-fecha_creacion"),
+        categoria_id=graphene.ID(),
+        precio_min=graphene.Float(),
+        precio_max=graphene.Float(),
+        en_stock=graphene.Boolean(),
         description="Lista todos los productos favoritos del usuario autenticado"
     )
     
@@ -43,11 +48,12 @@ class FavoritosQueries(graphene.ObjectType):
     # ============================================================
     
     @requiere_autenticacion(user_types=['usuario'])
-    def resolve_mis_favoritos(self, info, **kwargs):
-        """Lista todos los favoritos activos del usuario"""
+    def resolve_mis_favoritos(self, info, ordenar_por="-fecha_creacion", 
+                          categoria_id=None, precio_min=None, 
+                          precio_max=None, en_stock=None, **kwargs):
         usuario = kwargs['current_user']
         
-        return Favoritos.objects.filter(
+        queryset = Favoritos.objects.filter(
             usuario=usuario,
             fecha_eliminacion__isnull=True
         ).select_related(
@@ -55,10 +61,35 @@ class FavoritosQueries(graphene.ObjectType):
             'tienda_producto__tienda',
             'tienda_producto__talla',
             'estado'
-        ).prefetch_related(
-            'tienda_producto__imagenes'
-        ).order_by('-fecha_creacion')
-    
+        )
+        
+        # Filtros
+        if categoria_id:
+            queryset = queryset.filter(
+                tienda_producto__producto__categoria_id=categoria_id
+            )
+        
+        if precio_min is not None:
+            queryset = queryset.filter(tienda_producto__precio__gte=precio_min)
+        
+        if precio_max is not None:
+            queryset = queryset.filter(tienda_producto__precio__lte=precio_max)
+        
+        if en_stock:
+            queryset = queryset.filter(tienda_producto__stock__gt=0)
+        
+        # Ordenamiento
+        campos_validos = {
+            'fecha': 'fecha_creacion',
+            '-fecha': '-fecha_creacion',
+            'precio': 'tienda_producto__precio',
+            '-precio': '-tienda_producto__precio',
+            'nombre': 'tienda_producto__producto__nombre',
+        }
+        
+        orden = campos_validos.get(ordenar_por, '-fecha_creacion')
+        return queryset.order_by(orden)
+        
     @requiere_autenticacion(user_types=['usuario'])
     def resolve_es_favorito(self, info, tienda_producto_id, **kwargs):
         """Verifica si un producto específico está en favoritos"""
