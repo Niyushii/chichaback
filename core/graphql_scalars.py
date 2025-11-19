@@ -1,7 +1,7 @@
 import graphene
+from graphql.language import ast
 
 class Upload(graphene.Scalar):
-    '''Scalar para manejar archivos subidos vía GraphQL'''
 
     @staticmethod
     def serialize(value):
@@ -9,6 +9,8 @@ class Upload(graphene.Scalar):
 
     @staticmethod
     def parse_literal(node):
+        if isinstance(node, ast.StringValue):
+            return node.value
         return None
 
     @staticmethod

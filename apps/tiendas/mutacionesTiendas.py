@@ -1,4 +1,5 @@
 import graphene
+import cloudinary.uploader
 from graphql import GraphQLError
 from django.utils import timezone
 from .models import Tienda
@@ -7,6 +8,7 @@ from apps.usuarios.utils import requiere_autenticacion
 from apps.usuarios.models import Usuario, Auditoria
 from core.models import Estado
 from core.graphql_scalars import Upload
+
 
 # ============================================
 # INPUT TYPES (SIN ARCHIVOS)
@@ -33,8 +35,8 @@ class EditarTiendaInput(graphene.InputObjectType):
 class CrearTienda(graphene.Mutation):
     class Arguments:
         input = CrearTiendaInput(required=True)
-        foto_perfil = Upload()  # ✅ Aquí como argumento separado
-        codigo_qr = Upload()    # ✅ Aquí como argumento separado
+        foto_perfil = Upload()
+        codigo_qr = Upload()
 
     tienda = graphene.Field(TiendaType)
     mensaje = graphene.String()
@@ -43,7 +45,7 @@ class CrearTienda(graphene.Mutation):
     def mutate(self, info, input, foto_perfil=None, codigo_qr=None, **kwargs):
         usuario = kwargs['current_user']
 
-        # Nombre único por usuario
+        # Verificación de nombre único
         if Tienda.objects.filter(
             propietario=usuario,
             nombre__iexact=input.nombre,
@@ -60,16 +62,24 @@ class CrearTienda(graphene.Mutation):
             estado=Estado.get_activo()
         )
 
-        # IMÁGENES OPCIONALES
+        # --- SUBIR A CLOUDINARY SI HAY ARCHIVOS ---
         if foto_perfil:
-            tienda.foto_perfil = foto_perfil
+            res = cloudinary.uploader.upload(
+                foto_perfil,
+                folder="tiendas/foto_perfil/"
+            )
+            tienda.foto_perfil = res["secure_url"]
 
         if codigo_qr:
-            tienda.codigo_qr = codigo_qr
+            res = cloudinary.uploader.upload(
+                codigo_qr,
+                folder="tiendas/codigo_qr/"
+            )
+            tienda.codigo_qr = res["secure_url"]
 
         tienda.save()
 
-        # Convertir a vendedor
+        # Convertir en vendedor
         if not usuario.is_seller:
             usuario.is_seller = True
             usuario.save()
@@ -88,13 +98,13 @@ class EditarTienda(graphene.Mutation):
     class Arguments:
         id = graphene.ID(required=True)
         input = EditarTiendaInput(required=True)
-        foto_perfil = Upload()  # ✅ Aquí como argumento separado
-        codigo_qr = Upload()    # ✅ Aquí como argumento separado
+        foto_perfil = Upload()
+        codigo_qr = Upload()
 
     tienda = graphene.Field(TiendaType)
     mensaje = graphene.String()
 
-    @requiere_autenticacion(user_types=['usuario', 'moderador', 'superadmin'])
+    @requiere_autenticacion(user_types=['usuario','moderador','superadmin'])
     def mutate(self, info, id, input, foto_perfil=None, codigo_qr=None, **kwargs):
         usuario = kwargs["current_user"]
         rol = kwargs["user_type"]
@@ -104,54 +114,34 @@ class EditarTienda(graphene.Mutation):
         except Tienda.DoesNotExist:
             raise GraphQLError("Tienda no encontrada")
 
-        # PERMISOS
         if rol == "usuario" and tienda.propietario.id != usuario.id:
             raise GraphQLError("No tienes permiso para editar esta tienda")
 
-        # ✅ Auditoría para moderadores/superadmins
-        if rol in ["moderador", "superadmin"]:
-            Auditoria.registrar(
-                usuario=usuario,
-                accion="editar_tienda",
-                descripcion=f"{rol.capitalize()} {usuario.email} editó la tienda '{tienda.nombre}'"
-            )
+        # actualizar campos simples
+        for field in ["nombre", "descripcion", "telefono", "direccion"]:
+            value = getattr(input, field)
+            if value is not None:
+                setattr(tienda, field, value)
 
-        # Actualización de campos
-        if input.nombre:
-            if Tienda.objects.filter(
-                propietario=tienda.propietario,
-                nombre__iexact=input.nombre,
-                fecha_eliminacion__isnull=True
-            ).exclude(pk=id).exists():
-                raise GraphQLError("Ya existe otra tienda con ese nombre")
-            tienda.nombre = input.nombre
-
-        if input.descripcion is not None:
-            tienda.descripcion = input.descripcion
-
-        if input.telefono is not None:
-            tienda.telefono = input.telefono
-
-        if input.direccion is not None:
-            tienda.direccion = input.direccion
-
-        # IMÁGENES
+        # SUBIR NUEVAS IMÁGENES
         if foto_perfil:
-            if tienda.foto_perfil:
-                tienda.foto_perfil.delete(save=False)
-            tienda.foto_perfil = foto_perfil
+            res = cloudinary.uploader.upload(
+                foto_perfil,
+                folder="tiendas/foto_perfil/"
+            )
+            tienda.foto_perfil = res["secure_url"]
 
         if codigo_qr:
-            if tienda.codigo_qr:
-                tienda.codigo_qr.delete(save=False)
-            tienda.codigo_qr = codigo_qr
+            res = cloudinary.uploader.upload(
+                codigo_qr,
+                folder="tiendas/codigo_qr/"
+            )
+            tienda.codigo_qr = res["secure_url"]
 
         tienda.save()
 
-        return EditarTienda(
-            tienda=tienda,
-            mensaje="Tienda actualizada exitosamente"
-        )
+        return EditarTienda(tienda=tienda, mensaje="Tienda actualizada exitosamente")
+
 
 
 # ============================================
