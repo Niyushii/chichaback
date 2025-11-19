@@ -88,7 +88,7 @@ class ImagenProducto(models.Model):
         on_delete=models.CASCADE,
         related_name='imagenes'
     )
-    archivo = models.ImageField(upload_to="productos/", blank=True, null=True)
+    archivo = models.URLField(max_length=500, blank=True, null=True)
     estado = models.ForeignKey(Estado, on_delete=models.PROTECT, related_name='imagenes_producto')
     fecha_creacion = models.DateTimeField(auto_now_add=True)
     fecha_eliminacion = models.DateTimeField(blank=True, null=True)

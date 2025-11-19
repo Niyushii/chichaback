@@ -10,6 +10,7 @@ from apps.categorias.models import Categoria
 from core.models import Estado
 from .productosType import TiendaProductoType, ImagenProductoType, TallaType, ProductoType, ImagenProductoType
 from django.utils import timezone
+import cloudinary.uploader
 
 
 class CrearProductoInput(graphene.InputObjectType):
@@ -65,9 +66,13 @@ class CrearProducto(graphene.Mutation):
         # Subir imágenes
         if input.imagenes:
             for img in input.imagenes:
+                resultado = cloudinary.uploader.upload(
+                    img,
+                    folder="productos/"
+                )
                 ImagenProducto.objects.create(
                     producto=tp,
-                    archivo=img,
+                    archivo=resultado['secure_url'],
                     nombre=f"{producto.nombre}-{tp.id}",
                     estado=Estado.get_activo()
                 )
@@ -207,9 +212,14 @@ class SubirImagenProducto(graphene.Mutation):
         if tp.tienda.propietario != usuario and not (usuario.es_admin or usuario.es_moderador):
             raise GraphQLError("No autorizado")
 
+        resultado = cloudinary.uploader.upload(
+            imagen,
+            folder="productos/"
+        )
+
         img = ImagenProducto.objects.create(
             producto=tp,
-            archivo=imagen,
+            archivo=resultado['secure_url'],
             nombre=f"prod-{tp.id}",
             estado=Estado.get_activo()
         )
@@ -281,7 +291,12 @@ class EditarImagenProducto(graphene.Mutation):
         if input.descripcion:
             img.descripcion = input.descripcion
         if input.archivo:
-            img.archivo = input.archivo
+            resultado = cloudinary.uploader.upload(
+                input.archivo,
+                folder="productos/"
+            )
+            img.archivo = resultado['secure_url']
+        
 
         img.save()
 
