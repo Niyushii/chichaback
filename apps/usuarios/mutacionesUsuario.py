@@ -3,8 +3,8 @@ from graphql import GraphQLError
 from django.core.validators import validate_email
 from django.core.exceptions import ValidationError
 from django.utils import timezone
-from .models import Usuario, Moderador, SuperAdministrador
-from .usuariosType import UsuarioType, ModeradorType, SuperAdministradorType
+from .models import Usuario, Moderador, SuperAdministrador, Notificacion, Auditoria
+from .usuariosType import UsuarioType, ModeradorType, SuperAdministradorType, NotificacionType, AuditoriaType
 from .utils import crear_token, requiere_autenticacion
 from core.models import Estado
 
@@ -180,6 +180,58 @@ class EliminarModerador(graphene.Mutation):
             ok=True,
             mensaje="Moderador eliminado exitosamente"
         )
+        
+class CambiarEstadoModerador(graphene.Mutation):
+    """Cambia el estado de un moderador (activo, inactivo, suspendido, bloqueado)"""
+    class Arguments:
+        moderador_id = graphene.ID(required=True)
+        nuevo_estado = graphene.String(required=True)  # "activo", "inactivo", "suspendido", "bloqueado"
+    
+    moderador = graphene.Field(ModeradorType)
+    mensaje = graphene.String()
+    
+    @requiere_autenticacion(user_types=['superadmin'])
+    def mutate(self, info, moderador_id, nuevo_estado, **kwargs):
+        try:
+            moderador = Moderador.objects.get(pk=moderador_id)
+        except Moderador.DoesNotExist:
+            raise GraphQLError("Moderador no encontrado")
+        
+        # Validar estado
+        estados_validos = [Estado.ACTIVO, Estado.INACTIVO, Estado.SUSPENDIDO, Estado.BLOQUEADO]
+        if nuevo_estado not in estados_validos:
+            raise GraphQLError(f"Estado inválido. Usa: {', '.join(estados_validos)}")
+        
+        # Obtener instancia de Estado
+        if nuevo_estado == Estado.ACTIVO:
+            moderador.estado = Estado.get_activo()
+        elif nuevo_estado == Estado.INACTIVO:
+            moderador.estado = Estado.get_inactivo()
+        elif nuevo_estado == Estado.SUSPENDIDO:
+            moderador.estado = Estado.get_suspendido()
+        elif nuevo_estado == Estado.BLOQUEADO:
+            moderador.estado = Estado.get_bloqueado()
+        
+        moderador.save()
+        
+        # Auditoría
+        usuario = kwargs['current_user']
+        Auditoria.registrar(
+            usuario=usuario,
+            accion="cambiar_estado_moderador",
+            descripcion=f"SuperAdmin {usuario.email} cambió estado de {moderador.email} a '{nuevo_estado}'",
+            usuario_tipo='superadmin'
+        )
+        
+        return CambiarEstadoModerador(
+            moderador=moderador,
+            mensaje=f"Estado cambiado a '{nuevo_estado}'"
+        )
+
+# Agrégala a tu clase de mutaciones
+class UsuariosMutaciones(graphene.ObjectType):
+    # ... tus mutaciones existentes ...
+    cambiar_estado_moderador = CambiarEstadoModerador.Field()
 
 # ============= USUARIO MUTATIONS =============
 class RegistrarUsuario(graphene.Mutation):
@@ -351,6 +403,24 @@ class EliminarUsuario(graphene.Mutation):
             mensaje="Cuenta eliminada exitosamente"
         )
 
+class MarcarNotificacionLeida(graphene.Mutation):
+    class Arguments:
+        notificacion_id = graphene.ID(required=True)
+    
+    ok = graphene.Boolean()
+    
+    @requiere_autenticacion(user_types=['usuario'])
+    def mutate(self, info, notificacion_id, **kwargs):
+        usuario = kwargs['current_user']
+        
+        try:
+            notif = Notificacion.objects.get(pk=notificacion_id, usuario=usuario)
+            notif.leida = True
+            notif.save()
+            return MarcarNotificacionLeida(ok=True)
+        except Notificacion.DoesNotExist:
+            raise GraphQLError("Notificación no encontrada")
+        
 # ============= MUTATION CLASS =============
 class UsuariosMutaciones(graphene.ObjectType):
     # SuperAdmin
@@ -364,3 +434,5 @@ class UsuariosMutaciones(graphene.ObjectType):
     login = Login.Field()
     editar_usuario = EditarUsuario.Field()
     eliminar_usuario = EliminarUsuario.Field()
+    marcar_notificacion_leida = MarcarNotificacionLeida.Field()
+    cambiar_estado_moderador = CambiarEstadoModerador.Field()

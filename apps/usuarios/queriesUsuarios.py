@@ -1,8 +1,8 @@
 # apps/usuarios/queries.py
 import graphene
 from graphql import GraphQLError
-from .usuariosType import UsuarioType, ModeradorType, SuperAdministradorType, AuditoriaType
-from .models import Usuario, Moderador, SuperAdministrador, Auditoria
+from .usuariosType import UsuarioType, ModeradorType, SuperAdministradorType, AuditoriaType, NotificacionType
+from .models import Usuario, Moderador, SuperAdministrador, Auditoria, Notificacion
 from .utils import requiere_autenticacion
 from core.models import Estado
 
@@ -59,6 +59,9 @@ class UsuariosQueries(graphene.ObjectType):
     
     # ============ AUDITORÍA (SUPERADMIN) =============
     auditoria = graphene.List(AuditoriaType)
+    
+    # ============ NOTIFICACIONES =============
+    mis_notificaciones = graphene.List(NotificacionType, solo_no_leidas=graphene.Boolean(default_value=False))
     
     # ============================================================
     # RESOLVERS - QUERIES PÚBLICAS
@@ -199,3 +202,16 @@ class UsuariosQueries(graphene.ObjectType):
             vendedores=vendedores,
             nuevos_ultimos_30_dias=nuevos_usuarios
         )
+        
+    # ============================================================
+    # RESOLVERS - NOTIFICACIONES
+    # ============================================================
+    @requiere_autenticacion(user_types=['usuario'])
+    def resolve_mis_notificaciones(self, info, solo_no_leidas=False, **kwargs):
+        usuario = kwargs['current_user']
+        queryset = Notificacion.objects.filter(usuario=usuario)
+        
+        if solo_no_leidas:
+            queryset = queryset.filter(leida=False)
+        
+        return queryset

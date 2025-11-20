@@ -6,7 +6,7 @@ from apps.productos.schemaProductos import Query as ProductosQuery, Mutation as 
 from apps.favoritos.schemaFavoritos import Query as FavoritosQuery, Mutation as FavoritosMutation
 from apps.ventas.schemaVentas import Query as VentasQuery, Mutation as VentasMutation
 from core.coreType import EstadoType
-
+from apps.productos.queriesBusqueda import BusquedaQueries
 
 # Clases que unifican los esquemas de las distintas aplicaciones
 class Query(
@@ -16,6 +16,7 @@ class Query(
     ProductosQuery,
     FavoritosQuery,
     VentasQuery,
+    BusquedaQueries,
     graphene.ObjectType
 ):
     pass

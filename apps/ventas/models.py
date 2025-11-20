@@ -9,6 +9,7 @@ class Venta(models.Model):
     usuario = models.ForeignKey(Usuario, on_delete=models.PROTECT, related_name='ventas')
     tienda = models.ForeignKey(Tienda, on_delete=models.PROTECT, related_name='ventas')
     total = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    comprobante = models.URLField(max_length=500, blank=True, null=True)
     estado = models.ForeignKey(Estado, on_delete=models.PROTECT, related_name='ventas')
     fecha_creacion = models.DateTimeField(auto_now_add=True)
     fecha_eliminacion = models.DateTimeField(blank=True, null=True)

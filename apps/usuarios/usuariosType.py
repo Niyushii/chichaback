@@ -1,6 +1,6 @@
 import graphene
 from graphene_django import DjangoObjectType
-from .models import Usuario, Moderador, SuperAdministrador, Auditoria
+from .models import Usuario, Moderador, SuperAdministrador, Auditoria, Notificacion
 
 class UsuarioType(DjangoObjectType):
     class Meta:
@@ -39,3 +39,8 @@ class AuditoriaType(DjangoObjectType):
         model = Auditoria
         fields = "__all__"
         description = "Representa un registro de auditoría de acciones realizadas por usuarios."
+        
+class NotificacionType(DjangoObjectType):
+    class Meta:
+        model = Notificacion
+        fields = "__all__"
