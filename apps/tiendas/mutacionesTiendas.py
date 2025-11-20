@@ -171,11 +171,12 @@ class EliminarTienda(graphene.Mutation):
 
         # ✅ Auditoría
         if rol in ["moderador", "superadmin"]:
-            Auditoria.registrar(
-                usuario=usuario,
-                accion="eliminar_tienda",
-                descripcion=f"{rol.capitalize()} {usuario.email} eliminó la tienda '{tienda.nombre}'"
-            )
+            if kwargs['user_type'] in ['moderador', 'superadmin']:
+                Auditoria.registrar(
+                    usuario=usuario,
+                    accion="eliminar_tienda",
+                    descripcion=f"{rol.capitalize()} {usuario.email} eliminó la tienda '{tienda.nombre}'"
+                )
 
         # Verificar productos activos
         if tienda.productos.filter(fecha_eliminacion__isnull=True).exists():
@@ -228,11 +229,12 @@ class EliminarFotoPerfil(graphene.Mutation):
 
         # ✅ Auditoría
         if rol in ["moderador", "superadmin"]:
-            Auditoria.registrar(
-                usuario=usuario,
-                accion="eliminar_foto_perfil_tienda",
-                descripcion=f"{rol.capitalize()} {usuario.email} eliminó foto de perfil de '{tienda.nombre}'"
-            )
+            if kwargs['user_type'] in ['moderador', 'superadmin']:
+                Auditoria.registrar(
+                    usuario=usuario,
+                    accion="eliminar_foto_perfil_tienda",
+                    descripcion=f"{rol.capitalize()} {usuario.email} eliminó foto de perfil de '{tienda.nombre}'"
+                )
 
         if tienda.foto_perfil:
             tienda.foto_perfil.delete()
@@ -264,11 +266,12 @@ class EliminarCodigoQR(graphene.Mutation):
 
         # ✅ Auditoría
         if rol in ["moderador", "superadmin"]:
-            Auditoria.registrar(
-                usuario=usuario,
-                accion="eliminar_codigo_qr_tienda",
-                descripcion=f"{rol.capitalize()} {usuario.email} eliminó código QR de '{tienda.nombre}'"
-            )
+            if kwargs['user_type'] in ['moderador', 'superadmin']:
+                Auditoria.registrar(
+                    usuario=usuario,
+                    accion="eliminar_codigo_qr_tienda",
+                    descripcion=f"{rol.capitalize()} {usuario.email} eliminó código QR de '{tienda.nombre}'"
+                )
 
         if tienda.codigo_qr:
             tienda.codigo_qr.delete()

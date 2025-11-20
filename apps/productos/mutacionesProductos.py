@@ -129,12 +129,13 @@ class EditarProducto(graphene.Mutation):
         
         if usuario in ['moderador', 'superadmin']:
             from apps.usuarios.models import Auditoria
-            Auditoria.registrar(
-                usuario=usuario,
-                accion="editar_producto",
-                descripcion=f"{usuario.capitalize()} {usuario.email} editó producto '{tp.producto.nombre}'",
-                usuario_tipo=usuario
-    )
+            if kwargs['user_type'] in ['moderador', 'superadmin']:
+                Auditoria.registrar(
+                    usuario=usuario,
+                    accion="editar_producto",
+                    descripcion=f"{usuario.capitalize()} {usuario.email} editó producto '{tp.producto.nombre}'",
+                    usuario_tipo=usuario
+                    )
         # Editar variante (TiendaProducto)
         if input.talla_id:
             tp.talla_id = input.talla_id
@@ -179,12 +180,13 @@ class EliminarProducto(graphene.Mutation):
         tp.imagenes.update(fecha_eliminacion=timezone.now())
         if usuario in ['moderador', 'superadmin']:
             from apps.usuarios.models import Auditoria
-            Auditoria.registrar(
-                usuario=usuario,
-                accion="eliminar_producto",
-                descripcion=f"{usuario.capitalize()} {usuario.email} eliminó producto '{tp.producto.nombre}'",
-                usuario_tipo=usuario
-            )
+            if kwargs['user_type'] in ['moderador', 'superadmin']:
+                Auditoria.registrar(
+                    usuario=usuario,
+                    accion="eliminar_producto",
+                    descripcion=f"{usuario.capitalize()} {usuario.email} eliminó producto '{tp.producto.nombre}'",
+                    usuario_tipo=usuario
+                )
 
         return EliminarProducto(mensaje="Producto eliminado correctamente")
 
@@ -403,12 +405,13 @@ class CrearTalla(graphene.Mutation):
         talla.save()
         
         # Auditoría
-        Auditoria.registrar(
-            usuario=usuario,
-            accion="crear_talla",
-            descripcion=f"{user_type.capitalize()} {usuario.email} creó la talla '{talla.nombre}'",
-            usuario_tipo=user_type
-        )
+        if kwargs['user_type'] in ['moderador', 'superadmin']:   
+            Auditoria.registrar(
+                usuario=usuario,
+                accion="crear_talla",
+                descripcion=f"{user_type.capitalize()} {usuario.email} creó la talla '{talla.nombre}'",
+                usuario_tipo=user_type
+            )
         
         return CrearTalla(
             talla=talla,
@@ -451,12 +454,13 @@ class EditarTalla(graphene.Mutation):
         talla.save()
         
         # Auditoría
-        Auditoria.registrar(
-            usuario=usuario,
-            accion="editar_talla",
-            descripcion=f"{user_type.capitalize()} {usuario.email} editó talla de '{nombre_anterior}' a '{talla.nombre}'",
-            usuario_tipo=user_type
-        )
+        if kwargs['user_type'] in ['moderador', 'superadmin']:
+            Auditoria.registrar(
+                usuario=usuario,
+                accion="editar_talla",
+                descripcion=f"{user_type.capitalize()} {usuario.email} editó talla de '{nombre_anterior}' a '{talla.nombre}'",
+                usuario_tipo=user_type
+            )
         
         return EditarTalla(talla=talla, mensaje="Talla actualizada")
 
@@ -497,13 +501,13 @@ class EliminarTalla(graphene.Mutation):
         talla.save()
         
         # Auditoría
-        Auditoria.registrar(
-            usuario=usuario,
-            accion="eliminar_talla",
-            descripcion=f"{user_type.capitalize()} {usuario.email} eliminó talla '{nombre_talla}'",
-            usuario_tipo=user_type
-        )
-        
+        if kwargs['user_type'] in ['moderador', 'superadmin']:
+            Auditoria.registrar(
+                usuario=usuario,
+                accion="eliminar_talla",
+                descripcion=f"{user_type.capitalize()} {usuario.email} eliminó talla '{nombre_talla}'",
+                usuario_tipo=user_type
+            )
         return EliminarTalla(ok=True, mensaje=f"Talla '{nombre_talla}' eliminada")
 
 
@@ -548,12 +552,13 @@ class CrearTallasMasivas(graphene.Mutation):
         
         if cantidad > 0:
             nombres_creados = ", ".join([t.nombre for t in tallas_creadas])
-            Auditoria.registrar(
-                usuario=usuario,
-                accion="crear_tallas_masivas",
-                descripcion=f"{user_type.capitalize()} {usuario.email} creó {cantidad} tallas: {nombres_creados}",
-                usuario_tipo=user_type
-            )
+            if kwargs['user_type'] in ['moderador', 'superadmin']:
+                Auditoria.registrar(
+                    usuario=usuario,
+                    accion="crear_tallas_masivas",
+                    descripcion=f"{user_type.capitalize()} {usuario.email} creó {cantidad} tallas: {nombres_creados}",
+                    usuario_tipo=user_type
+                )
         
         mensaje = f"Se crearon {cantidad} tallas"
         if errores:

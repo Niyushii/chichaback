@@ -1,7 +1,7 @@
 import graphene
 from graphql import GraphQLError
-from .productosType import ProductoType, TiendaProductoType
-from .models import Producto, TiendaProducto
+from .productosType import ProductoType, TiendaProductoType, TallaType
+from .models import Producto, TiendaProducto, Talla
 from apps.usuarios.utils import requiere_autenticacion
 
 class ProductosPublicosQuery(graphene.ObjectType):
@@ -9,6 +9,7 @@ class ProductosPublicosQuery(graphene.ObjectType):
     producto_por_id = graphene.Field(ProductoType, id=graphene.ID(required=True))
     productos_de_tienda = graphene.List(TiendaProductoType, tienda_id=graphene.ID(required=True))
     buscar_productos = graphene.List(ProductoType, nombre=graphene.String(required=True))
+    tallas = graphene.List(TallaType)
 
     def resolve_todos_productos(self, info, limit=20, offset=0):
         return Producto.objects.filter(fecha_eliminacion__isnull=True)[offset:offset + limit]
@@ -30,6 +31,9 @@ class ProductosPublicosQuery(graphene.ObjectType):
             nombre__icontains=nombre,
             fecha_eliminacion__isnull=True
         )
+    
+    def resolve_tallas(self, info):
+        return Talla.objects.filter(fecha_eliminacion__isnull=True)
 
 # Query Privada para vendedores autenticados
 
@@ -46,3 +50,4 @@ class ProductosPrivadosQuery(graphene.ObjectType):
 
 class ProductosQuery(ProductosPublicosQuery, ProductosPrivadosQuery):
     pass
+
