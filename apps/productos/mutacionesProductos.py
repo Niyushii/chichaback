@@ -126,16 +126,14 @@ class EditarProducto(graphene.Mutation):
         if input.categoria_id:
             p.categoria_id = input.categoria_id
         p.save()
-        
-        if usuario in ['moderador', 'superadmin']:
-            from apps.usuarios.models import Auditoria
-            if kwargs['user_type'] in ['moderador', 'superadmin']:
-                Auditoria.registrar(
-                    usuario=usuario,
-                    accion="editar_producto",
-                    descripcion=f"{usuario.capitalize()} {usuario.email} editó producto '{tp.producto.nombre}'",
-                    usuario_tipo=usuario
-                    )
+
+        if kwargs['user_type'] in ['moderador', 'superadmin']:
+            Auditoria.registrar(
+                usuario=usuario,
+                accion="editar_producto",
+                descripcion=f"{usuario.capitalize()} {usuario.email} editó producto '{tp.producto.nombre}'",
+                usuario_tipo=usuario
+                )
         # Editar variante (TiendaProducto)
         if input.talla_id:
             tp.talla_id = input.talla_id
@@ -178,15 +176,13 @@ class EliminarProducto(graphene.Mutation):
 
         # Soft delete imágenes
         tp.imagenes.update(fecha_eliminacion=timezone.now())
-        if usuario in ['moderador', 'superadmin']:
-            from apps.usuarios.models import Auditoria
-            if kwargs['user_type'] in ['moderador', 'superadmin']:
-                Auditoria.registrar(
-                    usuario=usuario,
-                    accion="eliminar_producto",
-                    descripcion=f"{usuario.capitalize()} {usuario.email} eliminó producto '{tp.producto.nombre}'",
-                    usuario_tipo=usuario
-                )
+        if kwargs['user_type'] in ['moderador', 'superadmin']:
+            Auditoria.registrar(
+                usuario=usuario,
+                accion="eliminar_producto",
+                descripcion=f"{usuario.capitalize()} {usuario.email} eliminó producto '{tp.producto.nombre}'",
+                usuario_tipo=usuario
+            )
 
         return EliminarProducto(mensaje="Producto eliminado correctamente")
 

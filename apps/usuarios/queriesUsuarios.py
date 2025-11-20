@@ -40,7 +40,6 @@ class UsuariosQueries(graphene.ObjectType):
     # ============= QUERIES AUTENTICADAS - SUPERADMIN =============
     todos_moderadores = graphene.List(
         ModeradorType,
-        solo_activos=graphene.Boolean(default_value=True),
         description="Lista todos los moderadores (requiere superadmin)"
     )
     moderador_por_id = graphene.Field(

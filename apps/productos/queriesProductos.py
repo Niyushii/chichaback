@@ -8,7 +8,7 @@ class ProductosPublicosQuery(graphene.ObjectType):
     todos_productos = graphene.List(ProductoType, limit=graphene.Int(default_value=20),offset=graphene.Int(default_value=0))
     producto_por_id = graphene.Field(ProductoType, id=graphene.ID(required=True))
     productos_de_tienda = graphene.List(TiendaProductoType, tienda_id=graphene.ID(required=True))
-    buscar_productos = graphene.List(ProductoType, nombre=graphene.String(required=True))
+    buscar_productos = graphene.List(ProductoType, nombre=graphene.String(required=True), limit=graphene.Int(default_value=20), offset=graphene.Int(default_value=0))
     tallas = graphene.List(TallaType)
 
     def resolve_todos_productos(self, info, limit=20, offset=0):
@@ -26,11 +26,11 @@ class ProductosPublicosQuery(graphene.ObjectType):
             fecha_eliminacion__isnull=True
         )
 
-    def resolve_buscar_productos(self, info, nombre):
+    def resolve_buscar_productos(self, info, nombre, limit=20, offset=0):
         return Producto.objects.filter(
             nombre__icontains=nombre,
             fecha_eliminacion__isnull=True
-        )
+        )[offset:offset + limit]
     
     def resolve_tallas(self, info):
         return Talla.objects.filter(fecha_eliminacion__isnull=True)

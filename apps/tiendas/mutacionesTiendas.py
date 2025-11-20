@@ -170,13 +170,13 @@ class EliminarTienda(graphene.Mutation):
             raise GraphQLError("No tienes permiso para eliminar esta tienda")
 
         # ✅ Auditoría
-        if rol in ["moderador", "superadmin"]:
-            if kwargs['user_type'] in ['moderador', 'superadmin']:
-                Auditoria.registrar(
-                    usuario=usuario,
-                    accion="eliminar_tienda",
-                    descripcion=f"{rol.capitalize()} {usuario.email} eliminó la tienda '{tienda.nombre}'"
-                )
+        if kwargs['user_type'] in ['moderador', 'superadmin']:
+            Auditoria.registrar(
+                usuario=usuario,
+                accion="eliminar_tienda",
+                descripcion=f"{kwargs['user_type'].capitalize()} {usuario.email} eliminó la tienda '{tienda.nombre}'",
+                usuario_tipo=kwargs['user_type']
+            )
 
         # Verificar productos activos
         if tienda.productos.filter(fecha_eliminacion__isnull=True).exists():
@@ -228,13 +228,13 @@ class EliminarFotoPerfil(graphene.Mutation):
             raise GraphQLError("No tienes permiso")
 
         # ✅ Auditoría
-        if rol in ["moderador", "superadmin"]:
-            if kwargs['user_type'] in ['moderador', 'superadmin']:
-                Auditoria.registrar(
-                    usuario=usuario,
-                    accion="eliminar_foto_perfil_tienda",
-                    descripcion=f"{rol.capitalize()} {usuario.email} eliminó foto de perfil de '{tienda.nombre}'"
-                )
+        if kwargs['user_type'] in ['moderador', 'superadmin']:
+            Auditoria.registrar(
+                usuario=usuario,
+                accion="eliminar_tienda",
+                descripcion=f"{kwargs['user_type'].capitalize()} {usuario.email} eliminó la tienda '{tienda.nombre}'",
+                usuario_tipo=kwargs['user_type']
+            )
 
         if tienda.foto_perfil:
             tienda.foto_perfil.delete()
@@ -265,13 +265,13 @@ class EliminarCodigoQR(graphene.Mutation):
             raise GraphQLError("No tienes permiso")
 
         # ✅ Auditoría
-        if rol in ["moderador", "superadmin"]:
-            if kwargs['user_type'] in ['moderador', 'superadmin']:
-                Auditoria.registrar(
-                    usuario=usuario,
-                    accion="eliminar_codigo_qr_tienda",
-                    descripcion=f"{rol.capitalize()} {usuario.email} eliminó código QR de '{tienda.nombre}'"
-                )
+        if kwargs['user_type'] in ['moderador', 'superadmin']:
+            Auditoria.registrar(
+                usuario=usuario,
+                accion="eliminar_tienda",
+                descripcion=f"{kwargs['user_type'].capitalize()} {usuario.email} eliminó la tienda '{tienda.nombre}'",
+                usuario_tipo=kwargs['user_type']
+            )
 
         if tienda.codigo_qr:
             tienda.codigo_qr.delete()

@@ -106,9 +106,23 @@ class Auditoria(models.Model):
         ]
 
     @staticmethod
-    def registrar(usuario, accion, descripcion):
+    def registrar(usuario, accion, descripcion, usuario_tipo=None):
+        """
+        Registra una acción de auditoría.
+        
+        Args:
+            usuario: Instancia del usuario (Moderador o SuperAdmin)
+            accion: String describiendo la acción
+            descripcion: Descripción detallada
+            usuario_tipo: 'moderador' o 'superadmin' (explícito)
+        """
+        # Si no se pasa usuario_tipo, intentar deducirlo
+        if not usuario_tipo and usuario:
+            class_name = usuario.__class__.__name__.lower()
+            usuario_tipo = 'superadmin' if class_name == 'superadministrador' else class_name
+        
         Auditoria.objects.create(
-            usuario_tipo=usuario.__class__.__name__.lower() if usuario else None,
+            usuario_tipo=usuario_tipo,
             usuario_id=usuario.id if usuario else None,
             usuario_email=usuario.email if usuario and hasattr(usuario, "email") else None,
             accion=accion,
