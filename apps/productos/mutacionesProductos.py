@@ -20,7 +20,7 @@ class CrearProductoInput(graphene.InputObjectType):
     categoria_id = graphene.ID()
     talla_id = graphene.ID()
     precio = graphene.Float(required=True)
-    stock = graphene.Int(required=True)
+    stock = graphene.Int()
     imagenes = graphene.List(Upload)
 
 
@@ -44,6 +44,7 @@ class CrearProducto(graphene.Mutation):
         if tienda.propietario != usuario:
             raise GraphQLError("No puedes agregar productos a esta tienda")
 
+        
         # Crear producto base si no existe
         producto = Producto.objects.create(
             nombre=input.nombre,
@@ -51,7 +52,7 @@ class CrearProducto(graphene.Mutation):
             categoria_id=input.categoria_id,
             estado=Estado.get_activo()
         )
-
+        stock_value = input.stock if input.stock is not None else 1
         # Crear relación TiendaProducto
         tp = TiendaProducto.objects.create(
             tienda=tienda,
@@ -59,7 +60,7 @@ class CrearProducto(graphene.Mutation):
             talla_id=input.talla_id,
             descripcion=input.descripcion,
             precio=input.precio,
-            stock=input.stock,
+            stock=stock_value,
             estado=Estado.get_activo()
         )
 
