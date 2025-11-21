@@ -11,6 +11,22 @@ from core.models import Estado
 from .productosType import TiendaProductoType, ImagenProductoType, TallaType, ProductoType, ImagenProductoType
 from django.utils import timezone
 import cloudinary.uploader
+from graphene_django.types import DjangoObjectType
+from decimal import Decimal
+
+class DecimalScalar(graphene.Scalar):
+    """Scalar para Decimal"""
+    @staticmethod
+    def serialize(dt):
+        return float(dt)
+
+    @staticmethod
+    def parse_literal(node):
+        return Decimal(node.value)
+
+    @staticmethod
+    def parse_value(value):
+        return Decimal(value)
 
 
 class CrearProductoInput(graphene.InputObjectType):
@@ -98,7 +114,7 @@ class EditarProductoInput(graphene.InputObjectType):
     descripcion = graphene.String()
     categoria_id = graphene.ID()
     talla_id = graphene.ID()
-    precio = graphene.Float()
+    precio = DecimalScalar()
     stock = graphene.Int()
 
 
