@@ -37,12 +37,8 @@ class CrearVenta(graphene.Mutation):
             raise GraphQLError("Producto no encontrado")
         
         # Verificar stock
-        if tp.stock < input.cantidad:
-            raise GraphQLError("Stock insuficiente")
-        
-        # Verificar que el producto esté disponible
-        if tp.estado.nombre != Estado.DISPONIBLE:
-            raise GraphQLError("Este producto no está disponible para compra")
+
+
         
         # Subir comprobante a Cloudinary
         resultado = cloudinary.uploader.upload(
