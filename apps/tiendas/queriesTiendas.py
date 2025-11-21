@@ -18,7 +18,7 @@ class QueryTiendasPublicas(graphene.ObjectType):
     buscar_tiendas = graphene.List(TiendaType, nombre=graphene.String(required=True))
 
     def resolve_tiendas_publicas(self, info):
-        return Tienda.objects.filter(fecha_eliminacion__isnull=True, estado__nombre="Activo")
+        return Tienda.objects.filter(fecha_eliminacion__isnull=True, estado__nombre__iexact="Activo")
 
     def resolve_tienda_publica(self, info, id):
         try:
