@@ -50,14 +50,20 @@ class ProductosPublicosQuery(graphene.ObjectType):
         except Categoria.DoesNotExist:
             raise GraphQLError("Categoría no encontrada")
 
-        # IDs de categoría + subcategorías
+        # IDs de categoría + subcategorías activas
         ids_categorias = [categoria.id]
-        ids_categorias.extend(list(categoria.subcategorias.values_list("id", flat=True)))
+        ids_categorias.extend(list(
+            categoria.subcategorias.filter(fecha_eliminacion__isnull=True).values_list("id", flat=True)
+        ))
 
         return TiendaProducto.objects.filter(
             producto__categoria_id__in=ids_categorias,
-            fecha_eliminacion__isnull=True
-        )
+            fecha_eliminacion__isnull=True,
+            estado__nombre='activo',
+            producto__estado__nombre='activo',
+            tienda__estado__nombre='activo'
+        ).select_related('producto', 'tienda', 'talla').prefetch_related('imagenes')
+
 
 
 # Query Privada para vendedores autenticados

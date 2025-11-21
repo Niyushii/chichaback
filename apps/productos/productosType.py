@@ -1,6 +1,7 @@
 from graphene_django import DjangoObjectType
 import graphene
 from .models import Producto, Talla, TiendaProducto, ImagenProducto
+from apps.tiendas.tiendasType import TiendaType
 
 class ProductoType(DjangoObjectType):
     class Meta:
@@ -13,6 +14,10 @@ class TallaType(DjangoObjectType):
         fields = "__all__"
 
 class TiendaProductoType(DjangoObjectType):
+    tienda = graphene.Field(TiendaType)
+    producto = graphene.Field(lambda: ProductoType)
+    talla = graphene.Field(lambda: TallaType)
+    imagenes = graphene.List(lambda: ImagenProductoType)
     imagenes_urls = graphene.List(graphene.String)
 
     class Meta:
@@ -20,11 +25,11 @@ class TiendaProductoType(DjangoObjectType):
         fields = "__all__"
 
     def resolve_imagenes_urls(self, info):
-        urls = []
-        for img in self.imagenes.all():
-            if img.archivo:
-                urls.append(info.context.build_absolute_uri(img.archivo.url))
-        return urls
+        return [img.archivo for img in self.imagenes.all() if img.archivo]
+
+    def resolve_imagenes(self, info):
+        return self.imagenes.all()
+
 
 class ImagenProductoType(DjangoObjectType):
     archivo_url = graphene.String()
