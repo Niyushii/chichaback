@@ -44,3 +44,9 @@ class NotificacionType(DjangoObjectType):
     class Meta:
         model = Notificacion
         fields = "__all__"
+        
+class EstadisticasModeradoresType(graphene.ObjectType):
+    total = graphene.Int()
+    activos = graphene.Int()
+    inactivos = graphene.Int()
+    nuevos_ultimos_30_dias = graphene.Int()

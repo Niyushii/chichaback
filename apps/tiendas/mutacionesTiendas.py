@@ -116,6 +116,15 @@ class EditarTienda(graphene.Mutation):
 
         if rol == "usuario" and tienda.propietario.id != usuario.id:
             raise GraphQLError("No tienes permiso para editar esta tienda")
+        
+        # ✅ Auditoría
+        if kwargs['user_type'] in ['moderador', 'superadmin']:
+            Auditoria.registrar(
+                usuario=usuario,
+                accion="editar_tienda",
+                descripcion=f"{kwargs['user_type'].capitalize()} {usuario.email} edito la tienda '{tienda.nombre}'",
+                usuario_tipo=kwargs['user_type']
+            )
 
         # actualizar campos simples
         for field in ["nombre", "descripcion", "telefono", "direccion"]:

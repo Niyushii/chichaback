@@ -1,7 +1,7 @@
 # apps/usuarios/queries.py
 import graphene
 from graphql import GraphQLError
-from .usuariosType import UsuarioType, ModeradorType, SuperAdministradorType, AuditoriaType, NotificacionType
+from .usuariosType import UsuarioType, ModeradorType, SuperAdministradorType, AuditoriaType, NotificacionType, EstadisticasModeradoresType
 from .models import Usuario, Moderador, SuperAdministrador, Auditoria, Notificacion
 from .utils import requiere_autenticacion
 from core.models import Estado
@@ -56,7 +56,9 @@ class UsuariosQueries(graphene.ObjectType):
         'apps.usuarios.usuariosType.EstadisticasUsuariosType',
         description="Obtiene estadísticas generales de usuarios"
     )
-    
+    estadisticas_moderadores = graphene.Field(
+        'apps.usuarios.usuariosType.EstadisticasModeradoresType',
+        description="Obtiene estadísticas generales de moderadores")
     # ============ AUDITORÍA (SUPERADMIN) =============
     auditoria = graphene.List(AuditoriaType)
     
@@ -202,6 +204,41 @@ class UsuariosQueries(graphene.ObjectType):
             vendedores=vendedores,
             nuevos_ultimos_30_dias=nuevos_usuarios
         )
+     
+    @requiere_autenticacion(user_types=['superadmin'])
+    def resolve_todos_moderadores(self, info, **kwargs):
+        """Lista todos los moderadores (solo superadmin)"""
+        return Moderador.objects.filter(
+            fecha_eliminacion__isnull=True
+        ).select_related('estado').order_by('-fecha_creacion')    
+        
+    @requiere_autenticacion(user_types=['superadmin'])
+    def resolve_estadisticas_moderadores(self, info, **kwargs):
+        """Retorna estadísticas de moderadores"""
+        from django.utils import timezone
+        from datetime import timedelta
+        
+        total = Moderador.objects.count()
+        activos = Moderador.objects.filter(
+            fecha_eliminacion__isnull=True,
+            estado__nombre=Estado.ACTIVO
+        ).count()
+        inactivos = Moderador.objects.filter(
+            estado__nombre=Estado.INACTIVO
+        ).count()
+        
+        # Moderadores creados en los últimos 30 días
+        hace_30_dias = timezone.now() - timedelta(days=30)
+        nuevos = Moderador.objects.filter(
+            fecha_creacion__gte=hace_30_dias
+        ).count()
+        
+        return {
+            'total': total,
+            'activos': activos,
+            'inactivos': inactivos,
+            'nuevosUltimos30Dias': nuevos
+        }
         
     # ============================================================
     # RESOLVERS - NOTIFICACIONES
