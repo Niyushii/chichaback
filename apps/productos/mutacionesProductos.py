@@ -1,7 +1,7 @@
 import graphene
 from graphql import GraphQLError
 from core.graphql_scalars import Upload
-from apps.usuarios.models import Auditoria
+from apps.usuarios.models import Auditoria, AuditoriaUsuario
 from apps.usuarios.usuariosType import AuditoriaType
 from apps.usuarios.utils import requiere_autenticacion
 from apps.tiendas.models import Tienda
@@ -77,6 +77,14 @@ class CrearProducto(graphene.Mutation):
                     nombre=f"{producto.nombre}-{tp.id}",
                     estado=Estado.get_activo()
                 )
+        
+        # Auditoría para usuarios normales
+        if kwargs['user_type'] == 'usuario':
+            AuditoriaUsuario.registrar(
+                usuario=usuario,
+                accion="editar_tienda",
+                descripcion=f"El usuario {usuario.email} creo un producto '{producto.nombre}'"
+            )
 
         return CrearProducto(
             producto_tienda=tp,
@@ -135,6 +143,13 @@ class EditarProducto(graphene.Mutation):
                 descripcion=f"{usuario.capitalize()} {usuario.email} editó producto '{tp.producto.nombre}'",
                 usuario_tipo=usuario
                 )
+        
+        if kwargs['user_type'] == 'usuario':
+            AuditoriaUsuario.registrar(
+                usuario=usuario,
+                accion="editar_tienda",
+                descripcion=f"El usuario {usuario.email} edito su producto '{tp.producto.nombre}'"
+            )
         # Editar variante (TiendaProducto)
         if input.talla_id:
             tp.talla_id = input.talla_id
@@ -183,6 +198,21 @@ class EliminarProducto(graphene.Mutation):
                 accion="eliminar_producto",
                 descripcion=f"{usuario.capitalize()} {usuario.email} eliminó producto '{tp.producto.nombre}'",
                 usuario_tipo=usuario
+            )
+        
+        if kwargs['user_type'] in ['moderador', 'superadmin']:
+            Auditoria.registrar(
+                usuario=usuario,
+                accion="editar_producto",
+                descripcion=f"{usuario.capitalize()} {usuario.email} elimino el producto '{tp.producto.nombre}'",
+                usuario_tipo=usuario
+                )
+        
+        if kwargs['user_type'] == 'usuario':
+            AuditoriaUsuario.registrar(
+                usuario=usuario,
+                accion="editar_tienda",
+                descripcion=f"El usuario {usuario.email} elimino su producto '{tp.producto.nombre}'"
             )
 
         return EliminarProducto(mensaje="Producto eliminado correctamente")

@@ -1,8 +1,8 @@
 # apps/usuarios/queries.py
 import graphene
 from graphql import GraphQLError
-from .usuariosType import UsuarioType, ModeradorType, SuperAdministradorType, AuditoriaType, NotificacionType, EstadisticasModeradoresType
-from .models import Usuario, Moderador, SuperAdministrador, Auditoria, Notificacion
+from .usuariosType import UsuarioType, ModeradorType, SuperAdministradorType, AuditoriaType, NotificacionType, EstadisticasModeradoresType, AuditoriaUsuarioType
+from .models import Usuario, Moderador, SuperAdministrador, Auditoria, Notificacion, AuditoriaUsuario
 from .utils import requiere_autenticacion
 from core.models import Estado
 
@@ -61,6 +61,7 @@ class UsuariosQueries(graphene.ObjectType):
         description="Obtiene estadísticas generales de moderadores")
     # ============ AUDITORÍA (SUPERADMIN) =============
     auditoria = graphene.List(AuditoriaType)
+    auditoria_usuarios = graphene.List(AuditoriaUsuarioType)
     
     # ============ NOTIFICACIONES =============
     mis_notificaciones = graphene.List(NotificacionType, solo_no_leidas=graphene.Boolean(default_value=False))
@@ -165,8 +166,11 @@ class UsuariosQueries(graphene.ObjectType):
     # Registro de auditoría
     @requiere_autenticacion(user_types=['superadmin'])
     def resolve_auditoria(self, info, **kwargs):
-        return Auditoria.objects.all()
+        return Auditoria.objects.filter(usuario_tipo='moderador').order_by('-fecha')
     
+    @requiere_autenticacion(user_types=['superadmin', 'moderador'])
+    def resolve_auditoria_usuarios(self, info, **kwargs):
+        return AuditoriaUsuario.objects.all().order_by('-fecha')
     # ============================================================
     # RESOLVERS - ESTADÍSTICAS
     # ============================================================

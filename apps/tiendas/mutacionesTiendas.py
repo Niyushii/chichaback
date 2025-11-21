@@ -5,7 +5,7 @@ from django.utils import timezone
 from .models import Tienda
 from .tiendasType import TiendaType
 from apps.usuarios.utils import requiere_autenticacion
-from apps.usuarios.models import Usuario, Auditoria
+from apps.usuarios.models import Usuario, Auditoria, AuditoriaUsuario
 from core.models import Estado
 from core.graphql_scalars import Upload
 
@@ -76,6 +76,14 @@ class CrearTienda(graphene.Mutation):
                 folder="tiendas/codigo_qr/"
             )
             tienda.codigo_qr = res["secure_url"]
+        # Auditoría para usuarios normales
+        if kwargs['user_type'] == 'usuario':
+            AuditoriaUsuario.registrar(
+                usuario=usuario,
+                accion="editar_tienda",
+                descripcion=f"El usuario {usuario.email} creo su tienda '{tienda.nombre}'"
+            )
+
 
         tienda.save()
 
@@ -124,6 +132,14 @@ class EditarTienda(graphene.Mutation):
                 accion="editar_tienda",
                 descripcion=f"{kwargs['user_type'].capitalize()} {usuario.email} edito la tienda '{tienda.nombre}'",
                 usuario_tipo=kwargs['user_type']
+            )
+        
+        # Auditoría para usuarios normales
+        if kwargs['user_type'] == 'usuario':
+            AuditoriaUsuario.registrar(
+                usuario=usuario,
+                accion="editar_tienda",
+                descripcion=f"El usuario {usuario.email} editó su tienda '{tienda.nombre}'"
             )
 
         # actualizar campos simples
@@ -186,6 +202,14 @@ class EliminarTienda(graphene.Mutation):
                 descripcion=f"{kwargs['user_type'].capitalize()} {usuario.email} eliminó la tienda '{tienda.nombre}'",
                 usuario_tipo=kwargs['user_type']
             )
+        # Auditoría para usuarios normales
+        if kwargs['user_type'] == 'usuario':
+            AuditoriaUsuario.registrar(
+                usuario=usuario,
+                accion="editar_tienda",
+                descripcion=f"El usuario {usuario.email} elimino su tienda '{tienda.nombre}'"
+            )
+
 
         # Verificar productos activos
         if tienda.productos.filter(fecha_eliminacion__isnull=True).exists():

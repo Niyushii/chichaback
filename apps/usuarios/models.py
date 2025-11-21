@@ -132,6 +132,45 @@ class Auditoria(models.Model):
     def __str__(self):
         return f"[{self.usuario_tipo}] {self.accion} - {self.fecha}"
 
+class AuditoriaUsuario(models.Model):
+    usuario_id = models.IntegerField(blank=True, null=True)
+    usuario_email = models.EmailField(max_length=255, blank=True, null=True)
+    es_vendedor = models.BooleanField(default=False)
+
+    accion = models.CharField(max_length=200)
+    descripcion = models.TextField()
+    fecha = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'auditoria_usuario'
+        ordering = ['-fecha']
+        verbose_name = 'Auditoría de Usuario'
+        verbose_name_plural = 'Auditorías de Usuarios'
+        indexes = [
+            models.Index(fields=['usuario_id']),
+            models.Index(fields=['fecha']),
+        ]
+
+    @staticmethod
+    def registrar(usuario, accion, descripcion):
+        """
+        Registra una acción para un usuario normal o vendedor.
+        Args:
+            usuario: Instancia del modelo Usuario
+            accion: Acción realizada
+            descripcion: Detalle de la acción
+        """
+        AuditoriaUsuario.objects.create(
+            usuario_id=usuario.id if usuario else None,
+            usuario_email=usuario.email if usuario else None,
+            es_vendedor=usuario.is_seller if usuario else False,
+            accion=accion,
+            descripcion=descripcion
+        )
+
+    def __str__(self):
+        return f"[Usuario {'Vendedor' if self.es_vendedor else 'Normal'}] {self.accion} - {self.fecha}"
+
 
 class Notificacion(models.Model):
     TIPO_CHOICES = [
