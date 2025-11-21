@@ -98,7 +98,7 @@ class CrearProducto(graphene.Mutation):
         if kwargs['user_type'] == 'usuario':
             AuditoriaUsuario.registrar(
                 usuario=usuario,
-                accion="editar_tienda",
+                accion="crear_producto",
                 descripcion=f"El usuario {usuario.email} creo un producto '{producto.nombre}'"
             )
 
@@ -163,7 +163,7 @@ class EditarProducto(graphene.Mutation):
         if kwargs['user_type'] == 'usuario':
             AuditoriaUsuario.registrar(
                 usuario=usuario,
-                accion="editar_tienda",
+                accion="editar_producto",
                 descripcion=f"El usuario {usuario.email} edito su producto '{tp.producto.nombre}'"
             )
         # Editar variante (TiendaProducto)
@@ -219,7 +219,7 @@ class EliminarProducto(graphene.Mutation):
         if kwargs['user_type'] in ['moderador', 'superadmin']:
             Auditoria.registrar(
                 usuario=usuario,
-                accion="editar_producto",
+                accion="eliminar_producto",
                 descripcion=f"{usuario.capitalize()} {usuario.email} elimino el producto '{tp.producto.nombre}'",
                 usuario_tipo=usuario
                 )
